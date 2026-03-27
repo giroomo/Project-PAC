@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inclusive AI - Расшифровка видео</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #e9f5fd; color: #2C3E50; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header h1 { font-size: 1.8rem; color: #2C3E50; margin-bottom: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .top-section { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .section-title { font-size: 1.5rem; color: #2C3E50; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #c6e2f3; }
+        .upload-area { border: 3px dashed #2C3E50; border-radius: 12px; padding: 40px 20px; text-align: center; background: #e9f5fd; margin-bottom: 20px; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { background: #c6e2f3; }
+        .upload-icon { font-size: 3rem; display: block; margin-bottom: 15px; }
+        .file-label { display: inline-block; padding: 15px 30px; background: #2C3E50; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        input[type="file"] { display: none; }
+        .file-name { margin-top: 15px; font-weight: 600; }
+        .submit-btn { width: 100%; padding: 18px; background: #2C3E50; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: 700; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
+        .submit-btn:hover { background: #1a2a3a; }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .status-box { background: #c6e2f3; padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; }
+        .progress-container { width: 100%; background: white; border-radius: 10px; overflow: hidden; margin: 15px 0; border: 2px solid #2C3E50; }
+        .progress-bar { height: 25px; width: 0%; background: linear-gradient(90deg, #2C3E50, #c6e2f3); transition: width 0.3s ease; }
+        .result-text { margin-top: 20px; background: #f0f4f8; border-radius: 12px; padding: 20px; white-space: pre-wrap; }
+        .copy-btn { margin-top: 15px; padding: 12px 24px; background: #2C3E50; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .copy-btn:hover { background: #1a2a3a; }
+        footer { background: #2C3E50; color: white; padding: 25px; text-align: center; border-radius: 12px; margin-top: 40px; }
+        @media (max-width: 768px) { .top-section { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Inclusive AI — расшифровка видео</h1>
+        </header>
+        <div class="top-section">
+            <div class="card">
+                <h2 class="section-title">1. Загрузите видео</h2>
+                <form id="upload-form" action="/transcribe" method="POST" enctype="multipart/form-data">
+                    <div class="upload-area" id="drop-area">
+                        <span class="upload-icon">🎬</span>
+                        <label for="video-file" class="file-label">Выберите файл</label>
+                        <input type="file" id="video-file" name="file" accept="video/*" required>
+                        <div class="file-name" id="file-name">Файл не выбран</div>
+                    </div>
+                    <button type="submit" class="submit-btn" id="submit-btn">🚀 Начать обработку</button>
+                </form>
+                <div class="status-box">
+                    <div><strong>Статус обработки</strong></div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <p id="status-text">Ожидание загрузки...</p>
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="section-title">2. Результат</h2>
+                <div id="result-placeholder" style="text-align: center; padding: 40px 20px; background: #f0f4f8; border-radius: 12px;">
+                    <span style="font-size: 3rem;">📝</span>
+                    <p>Здесь появится расшифровка текста</p>
+                </div>
+                <div id="result-text" style="display: none;">
+                    <div class="result-text" id="transcript-text"></div>
+                    <button class="copy-btn" id="copy-btn">📋 Копировать текст</button>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <p>© 2025 Inclusive AI | Проект для детей с РАС</p>
+        </footer>
+    </div>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const fileInput = document.getElementById('video-file');
+        const fileNameDisplay = document.getElementById('file-name');
+        const submitBtn = document.getElementById('submit-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const resultPlaceholder = document.getElementById('result-placeholder');
+        const resultDiv = document.getElementById('result-text');
+        const transcriptText = document.getElementById('transcript-text');
+        const copyBtn = document.getElementById('copy-btn');
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+                fileNameDisplay.textContent = `${file.name} (${fileSize} МБ)`;
+                if (file.size > 300 * 1024 * 1024) {
+                    alert('Видео больше 300 МБ — аудио может превысить 30 МБ. Рекомендуется видео до 200 МБ.');
+                }
+            } else {
+                fileNameDisplay.textContent = 'Файл не выбран';
+            }
+        });
+
+        const dropArea = document.getElementById('drop-area');
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.style.background = '#c6e2f3';
+        });
+        dropArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropArea.style.background = '#e9f5fd';
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.background = '#e9f5fd';
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                fileInput.files = files;
+                const file = files[0];
+                const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+                fileNameDisplay.textContent = `${file.name} (${fileSize} МБ)`;
+            }
+        });
+        dropArea.addEventListener('click', () => fileInput.click());
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Выберите видеофайл');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Обработка...';
+            progressBar.style.width = '0%';
+            statusText.textContent = '⏳ Отправка видео...';
+            resultPlaceholder.style.display = 'block';
+            resultDiv.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    if (progress < 90) {
+                        progress += 5;
+                        progressBar.style.width = progress + '%';
+                    }
+                }, 300);
+
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+                clearInterval(interval);
+                progressBar.style.width = '100%';
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Ошибка сервера');
+                }
+
+                const data = await response.json();
+                statusText.textContent = '✅ Готово!';
+                resultPlaceholder.style.display = 'none';
+                resultDiv.style.display = 'block';
+                transcriptText.textContent = data.text;
+
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(data.text);
+                    copyBtn.textContent = '✅ Скопировано!';
+                    setTimeout(() => copyBtn.textContent = '📋 Копировать текст', 2000);
+                };
+            } catch (err) {
+                statusText.textContent = `❌ Ошибка: ${err.message}`;
+                console.error(err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Начать обработку';
+            }
+        });
+    </script>
+</body>
+</html>
