@@ -1,0 +1,11 @@
+venv/
+pycache/
+*.pyc
+.env
+temp/
+*.mp3
+*.mp4
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
