@@ -18,15 +18,13 @@
         .file-label { display: inline-block; padding: 15px 30px; background: #2C3E50; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; }
         input[type="file"] { display: none; }
         .file-name { margin-top: 15px; font-weight: 600; }
-        .submit-btn { width: 100%; padding: 18px; background: #2C3E50; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: 700; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
-        .submit-btn:hover { background: #1a2a3a; }
+        .submit-btn { width: 100%; padding: 18px; background: #2C3E50; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: 700; cursor: pointer; margin-top: 10px; }
         .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .status-box { background: #c6e2f3; padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; }
         .progress-container { width: 100%; background: white; border-radius: 10px; overflow: hidden; margin: 15px 0; border: 2px solid #2C3E50; }
         .progress-bar { height: 25px; width: 0%; background: linear-gradient(90deg, #2C3E50, #c6e2f3); transition: width 0.3s ease; }
         .result-text { margin-top: 20px; background: #f0f4f8; border-radius: 12px; padding: 20px; white-space: pre-wrap; }
         .copy-btn { margin-top: 15px; padding: 12px 24px; background: #2C3E50; color: white; border: none; border-radius: 8px; cursor: pointer; }
-        .copy-btn:hover { background: #1a2a3a; }
         footer { background: #2C3E50; color: white; padding: 25px; text-align: center; border-radius: 12px; margin-top: 40px; }
         @media (max-width: 768px) { .top-section { grid-template-columns: 1fr; } }
     </style>
@@ -42,9 +40,10 @@
                 <form id="upload-form" action="/transcribe" method="POST" enctype="multipart/form-data">
                     <div class="upload-area" id="drop-area">
                         <span class="upload-icon">🎬</span>
-                        <label for="video-file" class="file-label">Выберите файл</label>
-                        <input type="file" id="video-file" name="file" accept="video/*" required>
+                        <button type="button" class="file-label" id="file-select-btn">📁 Выберите файл</button>
+                        <input type="file" id="video-file" name="file" accept="video/*" style="display: none;">
                         <div class="file-name" id="file-name">Файл не выбран</div>
+                        <p style="font-size: 0.9rem; margin-top: 10px; color: #666;">или перетащите видео сюда</p>
                     </div>
                     <button type="submit" class="submit-btn" id="submit-btn">🚀 Начать обработку</button>
                 </form>
@@ -69,14 +68,16 @@
             </div>
         </div>
         <footer>
-            <p>© 2025 Inclusive AI | Проект для детей с РАС</p>
+            <p>© 2025 Inclusive AI | Расшифровка видео с помощью GigaChat</p>
         </footer>
     </div>
 
     <script>
-        const form = document.getElementById('upload-form');
+        const fileSelectBtn = document.getElementById('file-select-btn');
         const fileInput = document.getElementById('video-file');
         const fileNameDisplay = document.getElementById('file-name');
+        const dropArea = document.getElementById('drop-area');
+        const form = document.getElementById('upload-form');
         const submitBtn = document.getElementById('submit-btn');
         const progressBar = document.getElementById('progress-bar');
         const statusText = document.getElementById('status-text');
@@ -85,28 +86,32 @@
         const transcriptText = document.getElementById('transcript-text');
         const copyBtn = document.getElementById('copy-btn');
 
+        fileSelectBtn.addEventListener('click', () => fileInput.click());
+
+        dropArea.addEventListener('click', (e) => {
+            if (e.target !== fileSelectBtn && !fileSelectBtn.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const fileSize = (file.size / (1024 * 1024)).toFixed(2);
                 fileNameDisplay.textContent = `${file.name} (${fileSize} МБ)`;
-                if (file.size > 300 * 1024 * 1024) {
-                    alert('Видео больше 300 МБ — аудио может превысить 30 МБ. Рекомендуется видео до 200 МБ.');
-                }
-            } else {
-                fileNameDisplay.textContent = 'Файл не выбран';
             }
         });
 
-        const dropArea = document.getElementById('drop-area');
         dropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropArea.style.background = '#c6e2f3';
         });
+
         dropArea.addEventListener('dragleave', (e) => {
             e.preventDefault();
             dropArea.style.background = '#e9f5fd';
         });
+
         dropArea.addEventListener('drop', (e) => {
             e.preventDefault();
             dropArea.style.background = '#e9f5fd';
@@ -118,7 +123,6 @@
                 fileNameDisplay.textContent = `${file.name} (${fileSize} МБ)`;
             }
         });
-        dropArea.addEventListener('click', () => fileInput.click());
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -142,10 +146,10 @@
                 let progress = 0;
                 const interval = setInterval(() => {
                     if (progress < 90) {
-                        progress += 5;
+                        progress += 10;
                         progressBar.style.width = progress + '%';
                     }
-                }, 300);
+                }, 500);
 
                 const response = await fetch('/transcribe', {
                     method: 'POST',
@@ -172,7 +176,6 @@
                 };
             } catch (err) {
                 statusText.textContent = `❌ Ошибка: ${err.message}`;
-                console.error(err);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = '🚀 Начать обработку';
