@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inclusive AI - Адаптация видео для детей с РАС</title>
+    <link rel="stylesheet" href="2daun.css">
+    <link rel="stylesheet" href="2daun.js">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Перейти к загрузке видео</a>
+
+    <div class="container">
+        <!-- ШАПКА -->
+        <header>
+            <h1>Inclusive AI</h1>
+        </header>
+        
+        <main id="main-content">
+            <!-- ВЕРХНЯЯ ЧАСТЬ: ЗАГРУЗКА И РЕЗУЛЬТАТ -->
+            <div class="top-section">
+                <!-- ЛЕВАЯ КОЛОНКА: ЗАГРУЗКА ВИДЕО -->
+                <section class="upload-section card">
+                    <form action="/process" method="POST" enctype="multipart/form-data">
+                        <h2 class="section-title" id="upload">1. Загрузка видео</h2>
+                        
+                        <div class="upload-area">
+                            <span class="upload-icon">🎬</span>
+                            <label for="video-file" class="file-label" tabindex="0">
+                                Выберите файл
+                            </label>
+                            <input type="file" id="video-file" name="video" accept="video/*" required>
+                            <div class="file-name" id="file-name">Файл не выбран</div>
+                        </div>
+                        <div class="settings-group">
+                            <label for="duration">Оптимальная длительность:</label>
+                            <select id="duration" name="duration">
+                                <option value="short">Коротко (до 2 мин)</option>
+                                <option value="medium">Средне (2-5 мин)</option>
+                                <option value="original">Как в оригинале</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="submit-btn">🚀 Начать обработку</button>
+                    </form>
+
+                    <!-- Блок статуса -->
+                    <div class="status-box">
+                        <div><span class="status-indicator"></span><strong>Статус обработки</strong></div>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progress-bar"></div>
+                        </div>
+                        <p id="status-text">Ожидание загрузки...</p>
+                    </div>
+                </section>
+
+                <!-- ПРАВАЯ КОЛОНКА: РЕЗУЛЬТАТ -->
+                <aside class="result-section card">
+                    <h2 class="section-title" id="result">2. Результат</h2>
+                    
+                    <div class="video-preview">
+                        <div class="preview-placeholder" id="preview-placeholder">
+                            <span class="preview-icon">▶️</span>
+                            <p>Здесь появится ваше обработанное видео</p>
+                        </div>
+                        <video id="result-video" controls style="display: none; width: 100%; border-radius: 8px;">
+                            Ваш браузер не поддерживает видео.
+                        </video>
+                    </div>
+
+                    <button class="download-btn" id="download-btn" disabled>💾 Скачать видео</button>
+                </aside>
+            </div>
+
+            <!-- НИЖНЯЯ ЧАСТЬ: О ТЕХНОЛОГИИ (на всю ширину) -->
+            <section class="info-section card full-width">
+                <h2 class="section-title" id="info">О технологии</h2>
+                
+                <div class="info-grid">
+                    <div class="info-block">
+                        <h3>Что делает сервис?</h3>
+                        <ul class="info-list">
+                            <li>✓ Заменяет людей на животных (снижение тревожности)</li>
+                            <li>✓ Упрощает фон и убирает лишние детали</li>
+                            <li>✓ Корректирует цветовую палитру (спокойные тона)</li>
+                            <li>✓ Адаптирует темп повествования</li>
+                            <li>✓ Добавляет понятные субтитры</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-block">
+                        <h3>Требования к видео</h3>
+                        <ul class="info-list">
+                            <li>✓ Формат: MP4, MOV, AVI</li>
+                            <li>✓ Макс. размер: 500 МБ</li>
+                            <li>✓ Длительность: до 10 минут</li>
+                            <li>✓ Разрешение: от 720p</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-block">
+                        <h3>Время обработки</h3>
+                        <p class="processing-time"></p>
+                        <p class="processing-note"></p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer>
+            <p>© 2025 Inclusive AI | Проект для детей с РАС</p>
+            <p>📧 support@inclusive-ai.ru</p>
+        </footer>
+    </div>
+
+    <script>
+        // Отображение имени выбранного файла
+        document.getElementById('video-file').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : 'Файл не выбран';
+            document.getElementById('file-name').textContent = fileName;
+        });
+
+        // Имитация обработки
+        const form = document.querySelector('form');
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const downloadBtn = document.getElementById('download-btn');
+        const previewPlaceholder = document.getElementById('preview-placeholder');
+        const resultVideo = document.getElementById('result-video');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    statusText.textContent = '✅ Готово! Видео обработано.';
+                    previewPlaceholder.style.display = 'none';
+                    resultVideo.style.display = 'block';
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = '💾 Скачать видео';
+                } else {
+                    width += 5;
+                    progressBar.style.width = width + '%';
+                    statusText.textContent = '⏳ Обработка: ' + width + '%';
+                }
+            }, 200);
+        });
+    </script>
+</body>
+</html>
